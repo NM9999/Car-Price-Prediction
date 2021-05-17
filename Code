@@ -1,0 +1,144 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn import linear_model
+from sklearn.linear_model import LinearRegression
+# reading the dataset
+cars = pd.read_csv("E:/ML_notes-master/ML_notes-master/Case Studies/Car Price Prediction/1.1. CarPrice_Data.csv")
+cars.head()
+print(cars.info())
+cars['drivewheel'].astype('category').value_counts()
+cars['aspiration'].astype('category').value_counts()
+cars['symboling'].astype('category').value_counts()
+
+
+# all numeric (float and int) variables in the dataset
+cars_numeric = cars.select_dtypes(include=['int64','float64'])
+cars_numeric.head()
+#cars_numeric = cars_numeric.drop(['symboling', 'car_ID'], axis=1)
+cars_numeric.head()
+cor = cars_numeric.corr()
+cor
+plt.figure(figsize=(16,8))
+
+# heatmap
+sns.heatmap(cor, cmap="YlGnBu", annot=True)
+plt.show()
+
+
+cars.info()
+cars['symboling'] = cars['symboling'].astype('object')
+cars.info()
+cars['car_company'][:30]
+carnames = cars['CarName'].apply(lambda x: x.split(" ")[0])
+carnames[:30]
+import re
+p = re.compile(r'\w+-?\w+')
+carnames = cars['car_company'].apply(lambda x: re.findall(p, x)[0])
+print(carnames)
+cars['car_company'].astype('category').value_counts()
+
+# replacing misspelled car_company names
+# volkswagen
+cars.loc[(cars['car_company'] == "vw") | 
+         (cars['car_company'] == "vokswagen")
+         , 'car_company'] = 'volkswagen'
+# porsche
+cars.loc[cars['car_company'] == "porcshce", 'car_company'] = 'porsche'
+# toyota
+cars.loc[cars['car_company'] == "toyouta", 'car_company'] = 'toyota'
+# nissan
+cars.loc[cars['car_company'] == "Nissan", 'car_company'] = 'nissan'
+# mazda
+cars.loc[cars['car_company'] == "maxda", 'car_company'] = 'mazda'
+cars['car_company'].astype('category').value_counts()
+cars.info()
+
+
+# split into X and y
+X = cars[['symboling', 'fueltype', 'aspiration', 'doornumber',
+       'carbody', 'drivewheel', 'enginelocation', 'wheelbase', 'carlength',
+       'carwidth', 'carheight', 'curbweight', 'enginetype', 'cylindernumber',
+       'enginesize', 'fuelsystem', 'boreratio', 'stroke', 'compressionratio',
+       'horsepower', 'peakrpm', 'citympg', 'highwaympg',
+       'car_company']]
+y = cars['price']
+cars_categorical = X.select_dtypes(include=['object'])
+cars_categorical.head()
+cars_dummies = pd.get_dummies(cars_categorical, drop_first=True)
+cars_dummies.head()
+X = pd.concat([X, cars_dummies], axis=1)
+# scaling the features
+from sklearn.preprocessing import scale
+
+# storing column names in cols, since column names are (annoyingly) lost after 
+# scaling (the df is converted to a numpy array)
+cols = X.columns
+X = pd.DataFrame(scale(X))
+X.columns = cols
+X.columns
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, 
+                                                    train_size=0.7,
+                                                    test_size = 0.3, random_state=100)
+
+
+x=cars[['enginesize','horsepower']]
+y=cars['price']
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.15,random_state= 10)
+print (x_train.shape)
+print (x_test.shape)
+print(y_train.shape)
+print(y_test.shape)
+
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+lin_model = LinearRegression()  # Make an instance of the model
+lin_model.fit(x_train, y_train)
+
+y_train_predict = lin_model.predict(x_train)
+rmse = (np.sqrt(mean_squared_error(y_train, y_train_predict)))
+print("The model performance for training set")
+print('RMSE is {}'.format(rmse))
+print("\n")
+
+# on testing set
+y_test_predict = lin_model.predict(x_test)
+rmse = (np.sqrt(mean_squared_error(y_test, y_test_predict)))
+print("The model performance for testing set")
+print('RMSE is {}'.format(rmse))
+
+from sklearn.metrics import r2_score
+print(r2_score(y_test,y_test_predict))
+
+plt.scatter(y_test, y_test_predict)
+plt.plot([min(y_test_predict),max(y_test_predict)],[min(y_test_predict),max(y_test_predict)], color='red')
+plt.xlabel('Actual')
+plt.ylabel('Predicted')
+
+x=cars[['enginesize','horsepower','stroke','compressionratio','peakrpm','citympg', 'highwaympg']]
+y=cars['price']
+
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.15, random_state=5)
+lin_model.fit(x_train, y_train)
+y_train_predict = lin_model.predict(x_train)
+rmse = (np.sqrt(mean_squared_error(y_train, y_train_predict)))
+
+print("The model performance for training set")
+print('RMSE is {}'.format(rmse))
+print("\n")
+
+# on testing set
+y_test_predict = lin_model.predict(x_test)
+rmse = (np.sqrt(mean_squared_error(y_test, y_test_predict)))
+print("The model performance for testing set")
+print('RMSE is {}'.format(rmse))
+
+from sklearn.metrics import r2_score
+print(r2_score(y_test,y_test_predict))
+plt.scatter(y_test, y_test_predict)
+plt.plot([min(y_test_predict),max(y_test_predict)],[min(y_test_predict),max(y_test_predict)], color='red')
+plt.xlabel('Actual')
+plt.ylabel('Predicted')
